@@ -12,6 +12,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 import argparse
+#from keras.layers import Dense, Activation, Flatten, Conv2D, MaxPool2D, AveragePooling2D, BatchNormalization, ZeroPadding2D, Input, Dropout
 import numpy as np
 import os
 from utils import load_train_data, load_test_data, load, KmnistCallback
@@ -26,7 +27,7 @@ BATCH_SIZE = 128
 EPOCHS = 10
 L1_SIZE = 32
 L2_SIZE = 64
-L3_SIZS = 96
+L3_SIZE = 96
 L4_SIZE = 128
 L5_SIZE = 256
 DROPOUT_1_RATE = 0.25
@@ -54,9 +55,13 @@ def train_cnn(args):
     "epochs" : args.epochs,
     "l1_size": args.l1_size,
     "l2_size" : args.l2_size,
+    "l3_size": args.l3_size,
+    "l4_size" : args.l4_size,
+    "l5_size": args.l5_size,
     "dropout_1" : args.dropout_1,
     "dropout_2" : args.dropout_2,
-    "fc1_size" : args.fc1_size
+    "fc1_size" : args.fc1_size,
+    "fc2_size" : args.fc2_size
   }
   wandb.config.update(config)
 
@@ -90,22 +95,24 @@ def train_cnn(args):
   y_train = tf.keras.utils.to_categorical(y_train, NUM_CLASSES)
   y_test = tf.keras.utils.to_categorical(y_test, NUM_CLASSES)
 
-  # Build model
+# Build model
   model = tf.keras.Sequential()
   # 1_Conv2d + Maxpooling
-  model.add(layers.Conv2D(args.l1_size, kernel_size=(3, 3), activation='relu', input_shape=input_shape))
+  model.add(layers.Conv2D(args.l1_size, kernel_size=(3, 3),
+                 activation='relu',
+                 input_shape=input_shape))
   model.add(layers.MaxPooling2D(pool_size=(2,2)))
   
   # 2_Conv2d + Maxpooling
-  model.add(layers.Conv2D(args.l2_size, (3, 3), activation='relu'))
+  model.add(layers.Conv2D(args.l2_size, (3, 3), activation='relu', padding='same'))
   model.add(layers.MaxPooling2D(pool_size=(2, 2)))
   
   # 3_Conv2d + 4_Conv2d
-  model.add(layers.Cond2D(args.l3_size, (3, 3), activation='relu'))
-  model.add(layers.Cond2D(args.l4_size, (3, 3), activation='relu'))
+  model.add(layers.Conv2D(args.l3_size, (3, 3), activation='relu', padding='same'))
+  model.add(layers.Conv2D(args.l4_size, (3, 3), activation='relu', padding='same'))
   
   # 5_Conv2d + Maxpooling
-  model.add(layers.Conv2D(args.l5_size, (3, 3), activation='relu'))
+  model.add(layers.Conv2D(args.l5_size, (3, 3), activation='relu', padding='same'))
   model.add(layers.MaxPooling2D(pool_size=(2, 2)))
   
   # Dropout + Flatten
@@ -118,6 +125,7 @@ def train_cnn(args):
   model.add(layers.Dense(args.fc2_size, activation='relu'))
   model.add(layers.Dropout(args.dropout_2))
   model.add(layers.Dense(args.num_classes, activation='softmax'))
+
 
   model.compile(loss="categorical_crossentropy",
               optimizer="adadelta",
@@ -178,6 +186,13 @@ if __name__ == "__main__":
     default=FC1_SIZE,
     help="size of fully-connected layer")
   parser.add_argument(
+    "--fc2_size",
+    type=int,
+    default=FC2_SIZE,
+    help="size of fully-connected layer")
+
+
+  parser.add_argument(
     "--l1_size",
     type=int,
     default=L1_SIZE,
@@ -187,6 +202,22 @@ if __name__ == "__main__":
     type=int,
     default=L2_SIZE,
     help="size of second conv layer")
+  parser.add_argument(
+    "--l3_size",
+    type=int,
+    default=L3_SIZE,
+    help="size of second conv layer")
+  parser.add_argument(
+    "--l4_size",
+    type=int,
+    default=L4_SIZE,
+    help="size of second conv layer")
+  parser.add_argument(
+    "--l5_size",
+    type=int,
+    default=L5_SIZE,
+    help="size of second conv layer")
+
   parser.add_argument(
     "--num_classes",
     type=int,
